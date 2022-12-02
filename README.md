@@ -181,7 +181,7 @@ func test() {
 		"dictionary",
 		"")
 
-	container.SetQuerry(3, querry) //set query for fetching with 3 docs
+	container.OpenQuerry(3, querry) //set query for fetching with 3 docs
 
 	for {
 		res_status, res_body := container.Fetch() //fetching data

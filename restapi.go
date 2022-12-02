@@ -354,8 +354,8 @@ func ContainerFactory(database TDatabase, container string, partitionkey string)
 	}
 }
 
-//SetQuerry - defines a query for execution in fetch mode
-func (me *TContainer) SetQuerry(max_item_count int, query TQuerry) {
+//OpenQuerry - defines a query for execution in fetch mode
+func (me *TContainer) OpenQuerry(max_item_count int, query TQuerry) {
 	me.MaxItemCount = max_item_count
 	me.Query = query
 	me.Continuation = ""
@@ -464,7 +464,7 @@ func test() (status string) {
 		"dictionary",
 		"")
 
-	container.SetQuerry(3, querry) //set query for fetching with 3 docs
+	container.OpenQuerry(3, querry) //set query for fetching with 3 docs
 
 	for {
 		res_status, res_body := container.Fetch() //fetching data
