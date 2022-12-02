@@ -310,8 +310,88 @@ func DeleteDocumentByID(endpoint_uri string, master_key string, database string,
 	return res.Status, string(res_body)
 }
 
+// TDatabase - Structure for the access of the server and the database
+type TDatabase struct {
+	EndpointUri string `json:"endpoint_uri"`
+	MasterKey   string `json:"master_key"`
+	Database    string `json:"database"`
+}
+
+//DatabaseFactory - creates a database object
+func DatabaseFactory(endpoint_uri string, master_key string, database string) TDatabase {
+	return TDatabase{
+		EndpointUri: endpoint_uri,
+		MasterKey:   master_key,
+		Database:    database,
+	}
+}
+
+// TContainer - Object for accessing a container
+type TContainer struct {
+	Database     TDatabase `json:"database"`
+	Container    string    `json:"container"`
+	PartitionKey string    `json:"partition_key"`
+	Query        TQuerry   `json:"query"`
+	MaxItemCount int       `json:"max_item_count"`
+	Continuation string    `json:"continuation"`
+	Steps        int       `json:"steps"`
+	Status       string    `json:"status"`
+	Body         string    `json:"body"`
+}
+
+// ContainerFactory - creates a container object
+func ContainerFactory(database TDatabase, container string, partitionkey string) TContainer {
+	return TContainer{
+		Database:     database,
+		Container:    container,
+		PartitionKey: partitionkey,
+		Query:        TQuerry{},
+		MaxItemCount: 0,
+		Continuation: "",
+		Steps:        0,
+		Status:       "",
+		Body:         "",
+	}
+}
+
+//SetQuerry - defines a query for execution in fetch mode
+func (me *TContainer) SetQuerry(max_item_count int, query TQuerry) {
+	me.MaxItemCount = max_item_count
+	me.Query = query
+	me.Continuation = ""
+	me.Steps = 0
+	me.Status = ""
+	me.Body = ""
+	return
+}
+
+//Fetch - a fetch leads to a query
+func (me *TContainer) Fetch() (Status string, Body string) {
+	me.Status = "204 No Content"
+	me.Body = ""
+	if me.Continuation != "" || me.Steps == 0 {
+		me.Steps += 1
+		me.Status, me.Body, me.Continuation = ExecuteQuerry(me.Database.EndpointUri, me.Database.MasterKey, me.Database.Database, me.Container, me.PartitionKey, me.MaxItemCount, me.Continuation, me.Query)
+
+	}
+	return me.Status, me.Body
+
+}
+
+func (me *TContainer) ExecuteQuerry(max_item_count int, continuation string, query TQuerry) (Status string, Body string, Continuation string) {
+	return ExecuteQuerry(me.Database.EndpointUri, me.Database.MasterKey, me.Database.Database, me.Container, me.PartitionKey, max_item_count, continuation, query)
+}
+
+func (me *TContainer) CreateDocument(upset bool, data string) (Status string, Body string) {
+	return CreateDocument(me.Database.EndpointUri, me.Database.MasterKey, me.Database.Database, me.Container, me.PartitionKey, upset, data)
+}
+
+func (me *TContainer) DeleteDocumentByID(id string) (Status string, Body string) {
+	return DeleteDocumentByID(me.Database.EndpointUri, me.Database.MasterKey, me.Database.Database, me.Container, me.PartitionKey, id)
+}
+
 // test()
-func test() {
+func test() (status string) {
 	//get the "endpoint" and master-key from the .env file
 	godotenv.Load(".env")
 	endpoint := os.Getenv("ENDPOINT_URI")
@@ -330,6 +410,8 @@ func test() {
 			}},
 	}
 
+	// test 1 - the native operations
+	fmt.Println("test 1 - the native operations")
 	req_continuation := ""
 	steps := 0
 	for req_continuation != "" || steps == 0 {
@@ -344,11 +426,58 @@ func test() {
 		fmt.Println("Status: " + res_status)
 		//last "continuation" header becomes new request value
 		req_continuation = res_continuation
+		status = res_status
+		if !strings.Contains(res_status, "200") {
+			return
+		}
 
 		var MyBody TBody
 		_ = json.Unmarshal([]byte(res_body), &MyBody)
 		fmt.Println("Count: " + strconv.Itoa(int(MyBody.Count)))
 		fmt.Println("continuation:", res_continuation)
+		fmt.Println("Documents:")
+		for _, doc := range MyBody.Documents {
+
+			//mapping the interface{} element to struc
+			type Data struct {
+				Etag      string `mapstructure:"_etag"`
+				Rid       string `mapstructure:"_rid"`
+				ID        string `mapstructure:"id"`
+				Word      string `mapstructure:"word"`
+				Snippet   string `mapstructure:"snippet"`
+				CreatedAt string `mapstructure:"created_at"`
+			}
+			var MyData Data
+			mapstructure.Decode(doc, &MyData)
+
+			fmt.Println(MyData)
+		}
+	}
+
+	// test 2 - the object-like operations
+	fmt.Println("test 2 - the object-like operations")
+	container := ContainerFactory(
+		DatabaseFactory(
+			endpoint,
+			key,
+			"lerneria-express"),
+		"dictionary",
+		"")
+
+	container.SetQuerry(3, querry) //set query for fetching with 3 docs
+
+	for {
+		res_status, res_body := container.Fetch() //fetching data
+		fmt.Println("Status: " + res_status)
+		status = res_status
+		if !strings.Contains(res_status, "200") || res_body == "" {
+			break //Cancel because error
+		}
+
+		var MyBody TBody
+		_ = json.Unmarshal([]byte(res_body), &MyBody)
+		fmt.Println("Count: " + strconv.Itoa(int(MyBody.Count)))
+		fmt.Println("continuation:", container.Continuation)
 		fmt.Println("Documents:")
 		for _, doc := range MyBody.Documents {
 
@@ -366,6 +495,9 @@ func test() {
 
 			fmt.Println(MyDic)
 		}
+		if container.Continuation == "" {
+			break //Cancel because end of data
+		}
 	}
-
+	return
 }

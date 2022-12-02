@@ -253,3 +253,20 @@ func TestDeleteDocumentByID(t *testing.T) {
 		})
 	}
 }
+
+func Test_test(t *testing.T) {
+	tests := []struct {
+		name       string
+		wantStatus string
+	}{
+		{"test function",
+			"200 OK"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotStatus := test(); gotStatus != tt.wantStatus {
+				t.Errorf("test() = %v, want %v", gotStatus, tt.wantStatus)
+			}
+		})
+	}
+}

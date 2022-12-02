@@ -90,7 +90,7 @@ https://docs.microsoft.com/en-us/rest/api/cosmos-db/delete-a-document
 	Status - response status i.e. 204 No Content 
 	Body - response body as string i.e. ""
 	
-## Example
+## Example 1 - native operations
 ```
 func test() {
 	//get the "endpoint" and master-key from the .env file
@@ -152,3 +152,65 @@ func test() {
 }
 ```
 
+## Example 2 - object-like operations
+```
+func test() {
+	//get the "endpoint" and master-key from the .env file
+	godotenv.Load(".env")
+	endpoint := os.Getenv("ENDPOINT_URI")
+	key := os.Getenv("MASTER_KEY")
+
+	var querry = TQuerry{
+		Query: "SELECT * FROM c WHERE c.word = @word1 OR c.word = @word2 ",
+		Parameters: []TParameter{
+			{
+				Name:  "@word1",
+				Value: "Zwerg",
+			},
+			{
+				Name:  "@word2",
+				Value: "Nase",
+			}},
+	}
+
+	container := ContainerFactory(
+		DatabaseFactory(
+			endpoint,
+			key,
+			"lerneria-express"),
+		"dictionary",
+		"")
+
+	container.SetQuerry(3, querry) //set query for fetching with 3 docs
+
+	for {
+		res_status, res_body := container.Fetch() //fetching data
+		fmt.Println("Status: " + res_status)
+		if !strings.Contains(res_status, "200") || res_body == "" {
+			break //Cancel because error
+		}
+
+		var MyBody TBody
+		_ = json.Unmarshal([]byte(res_body), &MyBody)
+		fmt.Println("Count: " + strconv.Itoa(int(MyBody.Count)))
+		fmt.Println("continuation:", container.Continuation)
+		fmt.Println("Documents:")
+		for _, doc := range MyBody.Documents {
+
+			//mapping the interface{} element to struc
+			type Dic struct {
+				Etag      string `mapstructure:"_etag"`
+				Rid       string `mapstructure:"_rid"`
+				ID        string `mapstructure:"id"`
+				Word      string `mapstructure:"word"`
+				Snippet   string `mapstructure:"snippet"`
+				CreatedAt string `mapstructure:"created_at"`
+			}
+			var MyDic Dic
+			mapstructure.Decode(doc, &MyDic)
+
+			fmt.Println(MyDic)
+		}
+	}
+}
+```
