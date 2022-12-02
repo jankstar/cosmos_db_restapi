@@ -91,7 +91,7 @@ https://docs.microsoft.com/en-us/rest/api/cosmos-db/delete-a-document
 	Body - response body as string i.e. ""
 	
 ## Example 1 - native operations
-```
+```go
 func test() {
 	//get the "endpoint" and master-key from the .env file
 	godotenv.Load(".env")
@@ -153,7 +153,7 @@ func test() {
 ```
 
 ## Example 2 - object-like operations
-```
+```go
 func test() {
 	//get the "endpoint" and master-key from the .env file
 	godotenv.Load(".env")
