@@ -15,7 +15,7 @@ func TestExecuteQuerry(t *testing.T) {
 
 	godotenv.Load(".env")
 
-	var querry = TQuerry{
+	var querry = TQuery{
 		Query: "SELECT * FROM c WHERE c.word = @word1 OR c.word = @word2 ",
 		Parameters: []TParameter{
 			{
@@ -36,7 +36,7 @@ func TestExecuteQuerry(t *testing.T) {
 		partitionkey   string
 		max_item_count int
 		continuation   string
-		querry         TQuerry
+		querry         TQuery
 	}
 	tests := []struct {
 		name             string

@@ -33,7 +33,7 @@ https://docs.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-
 	container - name of container
 	partitionkey - optional partition key else ""
 	max_item_count - optional max item count else 0
-	querry - like TQuerry
+	querry - like TQuery
 
 ### Returns:
 	Status - response status i.e. 200 ok
@@ -98,7 +98,7 @@ func test() {
 	endpoint := os.Getenv("ENDPOINT_URI")
 	key := os.Getenv("MASTER_KEY")
 
-	var querry = TQuerry{
+	var querry = TQuery{
 		Query: "SELECT * FROM c WHERE c.word = @word1 OR c.word = @word2 ",
 		Parameters: []TParameter{
 			{
@@ -160,7 +160,7 @@ func test() {
 	endpoint := os.Getenv("ENDPOINT_URI")
 	key := os.Getenv("MASTER_KEY")
 
-	var querry = TQuerry{
+	var querry = TQuery{
 		Query: "SELECT * FROM c WHERE c.word = @word1 OR c.word = @word2 ",
 		Parameters: []TParameter{
 			{

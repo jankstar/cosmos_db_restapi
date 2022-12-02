@@ -24,7 +24,7 @@ import (
 )
 
 /*
-TQuerry structure for querry call:
+TQuery structure for querry call:
 
 	{
 		"query":"SELECT * FROM c WHERE c.name = @name",
@@ -38,7 +38,7 @@ type TParameter struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
-type TQuerry struct {
+type TQuery struct {
 	Query      string       `json:"query"`
 	Parameters []TParameter `json:"parameters"`
 }
@@ -97,7 +97,7 @@ parameters:
 	container - name of container
 	partitionkey - optional partition key else ""
 	max_item_count - optional max item count else 0
-	querry - like TQuerry
+	querry - like TQuery
 
 returns:
 
@@ -105,7 +105,7 @@ returns:
 	Body - response body as string
 	Continuation - the Continuation-token if there are more items to read
 */
-func ExecuteQuerry(endpoint_uri string, master_key string, database string, container string, partitionkey string, max_item_count int, continuation string, query TQuerry) (Status string, Body string, Continuation string) {
+func ExecuteQuerry(endpoint_uri string, master_key string, database string, container string, partitionkey string, max_item_count int, continuation string, query TQuery) (Status string, Body string, Continuation string) {
 
 	date_str := strings.ToLower(time.Now().UTC().Format(http.TimeFormat))
 
@@ -331,7 +331,7 @@ type TContainer struct {
 	Database     TDatabase `json:"database"`
 	Container    string    `json:"container"`
 	PartitionKey string    `json:"partition_key"`
-	Query        TQuerry   `json:"query"`
+	Query        TQuery    `json:"query"`
 	MaxItemCount int       `json:"max_item_count"`
 	Continuation string    `json:"continuation"`
 	Steps        int       `json:"steps"`
@@ -345,7 +345,7 @@ func ContainerFactory(database TDatabase, container string, partitionkey string)
 		Database:     database,
 		Container:    container,
 		PartitionKey: partitionkey,
-		Query:        TQuerry{},
+		Query:        TQuery{},
 		MaxItemCount: 0,
 		Continuation: "",
 		Steps:        0,
@@ -354,8 +354,8 @@ func ContainerFactory(database TDatabase, container string, partitionkey string)
 	}
 }
 
-//OpenQuerry - defines a query for execution in fetch mode
-func (me *TContainer) OpenQuerry(max_item_count int, query TQuerry) {
+//OpenQuery - defines a query for execution in fetch mode
+func (me *TContainer) OpenQuery(max_item_count int, query TQuery) {
 	me.MaxItemCount = max_item_count
 	me.Query = query
 	me.Continuation = ""
@@ -378,7 +378,7 @@ func (me *TContainer) Fetch() (Status string, Body string) {
 
 }
 
-func (me *TContainer) ExecuteQuerry(max_item_count int, continuation string, query TQuerry) (Status string, Body string, Continuation string) {
+func (me *TContainer) ExecuteQuerry(max_item_count int, continuation string, query TQuery) (Status string, Body string, Continuation string) {
 	return ExecuteQuerry(me.Database.EndpointUri, me.Database.MasterKey, me.Database.Database, me.Container, me.PartitionKey, max_item_count, continuation, query)
 }
 
@@ -397,7 +397,7 @@ func test() (status string) {
 	endpoint := os.Getenv("ENDPOINT_URI")
 	key := os.Getenv("MASTER_KEY")
 
-	var querry = TQuerry{
+	var querry = TQuery{
 		Query: "SELECT * FROM c WHERE c.word = @word1 OR c.word = @word2 ",
 		Parameters: []TParameter{
 			{
@@ -464,7 +464,7 @@ func test() (status string) {
 		"dictionary",
 		"")
 
-	container.OpenQuerry(3, querry) //set query for fetching with 3 docs
+	container.OpenQuery(3, querry) //set query for fetching with 3 docs
 
 	for {
 		res_status, res_body := container.Fetch() //fetching data
